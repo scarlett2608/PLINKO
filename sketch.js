@@ -1,115 +1,94 @@
-var userPaddle, computerPaddle, computerScore, playerScore, gameState, ball,scoreSound, wall_hitSound, hitSound;
+//constants
+const Engine = Matter.Engine;
+const World = Matter.World;
+const Bodies = Matter.Bodies;
+const Body = Matter.Body;
+const Render = Matter.Render;
 
-function preload(){
-  //scoreSound = loadSound('score.mp3');
-  //wall_hitSound = loadSound('wall_hit.mp3');
-  //hitSound = loadSound('hit.mp3');
-}
+//variables
+var engine,world;
+var plinkos = [];
+var particles = [];
+var divisions = [];
+var devisionHeight = 300;
+var ground;
 
 function setup() {
+  createCanvas(480,800);
+
+  engine = Engine.create();
+  world = engine.world;
   
-createCanvas(400,400);
 
-//create a user paddle sprite
-userPaddle = createSprite(390,200,10,70);
+  //ground
+  ground = new Ground(width/2,height,width,20);
 
-//create a computer paddle sprite
-computerPaddle = createSprite(10,200,10,70);
+  //divisions
+  for (let k = 0; k <= width; k = k + 80) {
+    divisions.push(new Ground(k,height-devisionHeight/2,10,devisionHeight));
+  }
 
-//create the pong ball
-ball = createSprite(200,200,12,12);
+  //plinkos
+  for (let j = 40; j <= width; j = j + 50) {
+    plinkos.push(new Plinkos(j,75));
+  }
 
-computerScore = 0;
-playerScore = 0;
-gameState = "serve";
+  for (let j = 15; j <= width-10; j = j + 50) {
+    plinkos.push(new Plinkos(j,175));
+  }
+
+  for (let j = 40; j <= width; j = j + 50) {
+    plinkos.push(new Plinkos(j,275));
+  }
+
+  for (let j = 15; j <= width-10; j = j + 50) {
+    plinkos.push(new Plinkos(j,375));
+  }
+
+  //particles
+  if (frameCount%30===0) {
+    particles.push(new Particle(random(width/2-10,width/2+10),10,10));
+  }
+
+  var render = Render.create({
+	  element: document.body,
+	  engine: engine,
+	  options: {
+	    width: 1600,
+	    height: 700,
+	    wireframes: false
+	  }
+  });
+
+  //Render.run(render);
+  Engine.run(engine)
 }
 
-function draw() {  
-  //fill the computer screen with white color
-  background("white");
-  edges = createEdgeSprites();
-  //display Scores
-  text(computerScore,170,20);
-  text(playerScore, 230,20);
+function draw() {
+  Engine.update(engine);
+  background('darkcyan');  
 
-  //draw dotted lines
-  for (var i = 0; i < 400; i+=20) {
-     line(200,i,200,i+10);
+  
+
+  //display
+  ground.display();
+
+  //particles
+  if (frameCount%60===0) {
+    particles.push(new Particle(random(width/2-10,width/2+10),10,10));
   }
 
-  if (gameState === "serve") {
-    text("Press Space to Serve",150,180);
+  //arrays display
+  for (let k = 0; k < divisions.length; k++) {
+    divisions[k].display();
   }
 
-  if (gameState === "over") {
-    text("Game Over!",170,160);
-    text("Press 'R' to Restart",150,180);
+  for (let j = 0; j < plinkos.length; j++) {
+    plinkos[j].display();
   }
 
-  if (keyDown("r")) {
-    gameState = "serve";
-    computerScore = 0;
-    playerScore = 0;
+  for (let p = 0; p < particles.length; p++) {
+    particles[p].display();
   }
-
-
-  //give velocity to the ball when the user presses play
-  //assign random velocities later for fun
-  if (keyDown("space") && gameState == "serve") {
-    ball.velocityX = 5;
-    ball.velocityY = 5;
-    gameState = "play";
-  }
-
-  //make the userPaddle move with the mouse
-  userPaddle.y = World.mouseY;
-
-
-
-  //make the ball bounce off the user paddle
-  if(ball.isTouching(userPaddle)){
-    //hitSound.play();
-    ball.x = ball.x - 5;
-    ball.velocityX = -ball.velocityX;
-  }
-
-  //make the ball bounce off the computer paddle
-  if(ball.isTouching(computerPaddle)){
-    //hitSound.play();
-    ball.x = ball.x + 5;
-    ball.velocityX = -ball.velocityX;
-  }
-
-  //place the ball back in the centre if it crosses the screen
-  if(ball.x > 400 || ball.x < 0){
-    //scoreSound.play();
-
-  if (ball.x < 0) {
-      playerScore++;
-    }
-    else {
-      computerScore++;
-    }
-
-    ball.x = 200;
-    ball.y = 200;
-    ball.velocityX = 0;
-    ball.velocityY = 0;
-    gameState = "serve";
-
-    if (computerScore=== 5 || playerScore === 5){
-      gameState = "over";
-    }
-  }
-
-  //make the ball bounce off the top and bottom walls
-  if (ball.isTouching(edges[2]) || ball.isTouching(edges[3])) {
-    ball.bounceOff(edges[2]);
-    ball.bounceOff(edges[3]);
-    //wall_hitSound.play();
-  }
-
-  //add AI to the computer paddle so that it always hits the ball
-  computerPaddle.y = ball.y;
-  drawSprites();
+  
 }
